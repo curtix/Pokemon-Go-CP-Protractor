@@ -1,0 +1,332 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <style>
+        @media print 
+        {
+            #divInput
+            {
+                display:none;
+            }
+        }
+        .ARInput
+        {
+            width:20px;
+        }
+
+    </style>
+</head>
+<body style="padding:5px 20px;"><div id="divInput" style="margin:10px;">
+   Device Aspect Ratio (ex 16:9) <input id="inScreenAR1" class="ARInput" type="text" value="16" /> : <input id="inScreenAR2" class="ARInput" type="text" value="9" /><br /> 
+   <label for="inScreenDiagonal">Screen Diagonal</label> <input id="inScreenDiagonal" type="text" value="5.7" /><br />
+    <label for="inPrinterDPI">Printer DPI</label> <input id="inPrinterDPI" type="text" value="300" /><br />
+    <br />
+   <label for="inPlayerLevel">Pokemon Trainer Level</label> <input id="inPlayerLevel" type="text" value="26" /><br />
+
+
+
+                                </div>
+    <canvas id="deviceCanvas1" style="border:1px dashed #000000;"></canvas>
+    <canvas id="deviceCanvas2" style="border:1px dashed #000000;"></canvas><br />
+    <canvas id="deviceCanvas3" style="border:1px dashed #000000;"></canvas>
+    <canvas id="deviceCanvas4" style="border:1px dashed #000000;"></canvas><br />
+    <canvas id="deviceCanvas5" style="border:1px dashed #000000;"></canvas>
+    <canvas id="deviceCanvas6" style="border:1px dashed #000000;"></canvas>
+
+
+    <script type="text/javascript">
+        var arcCenterXRatio = 0.5;
+        var arcCenterYRatio = 0.355;
+        var arcRadiusRatio = 0.39;
+        var detailsTopRatio = 0.38;
+        var imageDPI = 96;
+        var maxGridTick = .5 * imageDPI;
+        var maxArcTick = .5 * imageDPI;
+        var labeledAngles = 15;
+        var printerDPI = 300;
+
+        //"borrowed" from thesilphroad.com iv calculator along with formula: 90 + ((CpM[i]-0.094)*202.037116/CpM[trainer_level*2-2])
+        var CpM = [0.094, 0.1351374, 0.1663979, 0.1926509, 0.2157325, 0.2365727, 0.2557201, 0.2735304, 0.2902499, 0.3060574, 0.3210876, 0.335445, 0.3492127, 0.3624578, 0.3752356, 0.3875924, 0.3995673, 0.4111936, 0.4225, 0.4335117, 0.4431076, 0.45306, 0.4627984, 0.4723361, 0.481685, 0.4908558, 0.4998584, 0.5087018, 0.517394, 0.5259425, 0.5343543, 0.5426358, 0.5507927, 0.5588306, 0.5667545, 0.5745692, 0.5822789, 0.5898879, 0.5974, 0.6048188, 0.6121573, 0.6194041, 0.6265671, 0.6336492, 0.640653, 0.647581, 0.6544356, 0.6612193, 0.667934, 0.6745819, 0.6811649, 0.6876849, 0.6941437, 0.7005429, 0.7068842, 0.7131691, 0.7193991, 0.7255756, 0.7317, 0.734741, 0.7377695, 0.7407856, 0.7437894, 0.7467812, 0.749761, 0.7527291, 0.7556855, 0.7586304, 0.7615638, 0.7644861, 0.7673972, 0.7702973, 0.7731865, 0.776065, 0.7789328, 0.7817901, 0.784637, 0.7874736, 0.7903, 0.7931164];
+
+        //debugging
+        var bDrawGrid = false;
+        var drawAll = function () {
+
+            var screenAR1 = document.getElementById("inScreenAR1").value;
+            var screenAR2 = document.getElementById("inScreenAR2").value;
+            var screenDiagonalInches = document.getElementById("inScreenDiagonal").value;
+            printerDPI = document.getElementById("inPrinterDPI").value;
+            var playerLevel = document.getElementById("inPlayerLevel").value;
+
+            screenAR1 = !screenAR1 || isNaN(screenAR1) ? 0 : parseFloat(screenAR1);
+            screenAR2 = !screenAR2 || isNaN(screenAR2) ? 0 : parseFloat(screenAR2);
+            screenDiagonalInches = !screenDiagonalInches || isNaN(screenDiagonalInches) ? 0 : parseFloat(screenDiagonalInches);
+            printerDPI = !printerDPI || isNaN(printerDPI) ? 0 : parseFloat(printerDPI);
+            playerLevel = !playerLevel || isNaN(playerLevel) ? 0 : parseFloat(playerLevel);
+
+            if (screenAR1 >= 1 && screenAR2 >= 1 && screenDiagonalInches >= 2 && printerDPI > 50
+                && playerLevel >= 1 && playerLevel <= 40) {
+                var device_ppi = screenDiagonalInches / Math.sqrt(Math.pow(screenAR1, 2) + Math.pow(screenAR2, 2));
+
+                var screenWidthInches;
+                var screenHeightInches;
+
+                if (screenAR1 < screenAR2) {
+                    screenWidthInches = screenAR1 * device_ppi;
+                    screenHeightInches = screenAR2 * device_ppi;
+
+                } else {
+                    screenWidthInches = screenAR2 * device_ppi;
+                    screenHeightInches = screenAR1 * device_ppi;
+                }
+
+                var pixelWidth = screenWidthInches * printerDPI;
+                var pixelHeight = screenHeightInches * printerDPI;
+
+
+                drawProtractor(document.getElementById("deviceCanvas1"), pixelWidth, pixelHeight,playerLevel);
+                playerLevel++;
+                if (playerLevel <= 40)
+                    drawProtractor(document.getElementById("deviceCanvas2"),  pixelWidth, pixelHeight, playerLevel);
+                playerLevel++;
+                if (playerLevel <= 40)
+                    drawProtractor(document.getElementById("deviceCanvas3"),  pixelWidth, pixelHeight, playerLevel);
+                playerLevel++;
+                if (playerLevel <= 40)
+                    drawProtractor(document.getElementById("deviceCanvas4"),  pixelWidth, pixelHeight, playerLevel);
+                playerLevel++;
+                if (playerLevel <= 40)
+                    drawProtractor(document.getElementById("deviceCanvas5"),  pixelWidth, pixelHeight, playerLevel);
+                playerLevel++;
+                if (playerLevel <= 40)
+                    drawProtractor(document.getElementById("deviceCanvas6"),  pixelWidth, pixelHeight, playerLevel);
+            }
+        }
+        
+        var drawProtractor = function (protractorCanvas, pixelWidth, pixelHeight, playerLevel) {
+             
+            var ctx = protractorCanvas.getContext("2d");
+            
+            protractorCanvas.width = pixelWidth;
+            protractorCanvas.height = pixelHeight / 2;
+            protractorCanvas.style.width = pixelWidth * (imageDPI / printerDPI) + "px";
+            protractorCanvas.style.height = pixelHeight / 2 * (imageDPI / printerDPI) + "px";
+            ctx.clearRect(0, 0, pixelWidth, pixelHeight/2);
+            protractorCanvas.fillStyle = "#000000";
+            ctx.beginPath();
+            var centerX = pixelWidth * arcCenterXRatio;
+            var centerY = pixelHeight * arcCenterYRatio;
+            var arcRadius = pixelWidth * arcRadiusRatio;
+            ctx.arc(centerX, centerY, arcRadius, Math.PI, 2 * Math.PI);
+            ctx.stroke();
+
+            var detailsTop = pixelHeight * detailsTopRatio;
+            ctx.beginPath();
+            ctx.moveTo(0, detailsTop);
+            ctx.lineTo(pixelWidth, detailsTop);
+            ctx.stroke();
+            ctx.font = "20px Arial";
+            ctx.fillText("top of details section", 10, detailsTop + 24);
+            ctx.fillText("Trainer Level: "+ playerLevel, 4, 4+20);
+
+
+            drawTicks(ctx, centerX, centerY, arcRadius, playerLevel);
+
+            //debugging screen ratios
+            if (bDrawGrid) {
+                drawTickedLine(ctx, pixelWidth / 2, 0, pixelWidth / 2, pixelHeight);
+                drawTickedLine(ctx, 0, pixelHeight * arcCenterYRatio, pixelWidth, pixelHeight * arcCenterYRatio);
+            }
+
+        }
+
+        var drawProtractorOLD = function () {
+
+            var screenAR1 = document.getElementById("inScreenAR1").value;
+            var screenAR2 = document.getElementById("inScreenAR2").value;
+            var screenDiagonalInches = document.getElementById("inScreenDiagonal").value;
+            var printerDPI = document.getElementById("inPrinterDPI").value;
+            var playerLevel = document.getElementById("inPlayerLevel").value;
+
+            screenAR1 = !screenAR1 || isNaN(screenAR1) ? 0 : parseFloat(screenAR1);
+            screenAR2 = !screenAR2 || isNaN(screenAR2) ? 0 : parseFloat(screenAR2);
+            screenDiagonalInches = !screenDiagonalInches || isNaN(screenDiagonalInches) ? 0 : parseFloat(screenDiagonalInches);
+            printerDPI = !printerDPI || isNaN(printerDPI) ? 0 : parseFloat(printerDPI);
+            playerLevel = !playerLevel || isNaN(playerLevel) ? 0 : parseFloat(playerLevel);
+
+            if (screenAR1 >= 1 && screenAR2 >= 1 && screenDiagonalInches >= 2 && printerDPI > 50
+                && playerLevel >= 1 && playerLevel <= 40) {
+                var device_ppi = screenDiagonalInches / Math.sqrt(Math.pow(screenAR1, 2) + Math.pow(screenAR2, 2));
+
+                var screenWidthInches;
+                var screenHeightInches;
+
+                if (screenAR1 < screenAR2) {
+                    screenWidthInches = screenAR1 * device_ppi;
+                    screenHeightInches = screenAR2 * device_ppi;
+
+                } else {
+                    screenWidthInches = screenAR2 * device_ppi;
+                    screenHeightInches = screenAR1 * device_ppi;
+                }
+
+                //  var pixelWidth = screenWidthInches * printerDPI;
+                //  var pixelHeight = screenHeightInches * printerDPI;
+                var pixelWidth = screenWidthInches * printerDPI;
+                var pixelHeight = screenHeightInches * printerDPI;
+
+
+                c.width = pixelWidth;
+                c.height = pixelHeight;
+                c.style.width = pixelWidth * (imageDPI / printerDPI) + "px";
+                c.style.height = pixelHeight * (imageDPI / printerDPI) + "px";
+                ctx.clearRect(0, 0, pixelWidth, pixelHeight);
+                c.fillStyle = "#000000";
+                ctx.beginPath();
+                var centerX = pixelWidth * arcCenterXRatio;
+                var centerY = pixelHeight * arcCenterYRatio;
+                var arcRadius = pixelWidth * arcRadiusRatio;
+                ctx.arc(centerX, centerY, arcRadius, Math.PI, 2 * Math.PI);
+                ctx.stroke();
+
+                var detailsTop = pixelHeight * detailsTopRatio;
+                ctx.beginPath();
+                ctx.moveTo(0, detailsTop);
+                ctx.lineTo(pixelWidth, detailsTop);
+                ctx.stroke(); 
+                ctx.font = "20px Arial";
+                ctx.fillText("top of details section", 10, detailsTop + 24);
+
+
+                drawTicks(ctx, centerX, centerY, arcRadius, playerLevel);
+
+                //debugging screen ratios
+                if (bDrawGrid) {
+                    drawTickedLine(ctx, pixelWidth / 2, 0, pixelWidth / 2, pixelHeight);
+                    drawTickedLine(ctx, 0, pixelHeight * arcCenterYRatio, pixelWidth, pixelHeight * arcCenterYRatio);
+                }
+            } else {
+                c.width = 600;
+                c.height = 400;
+                c.style.width = 600;
+                c.style.height = 400;
+                ctx.clearRect(0, 0, ctx.width, ctx.height);
+            }
+        }
+
+        function drawTicks(ctx,centerX,centerY,arcRadius, trainer_level) {
+            var arcLevels = Math.min((trainer_level) * 2 + 2, 79);
+            var labelEveryN = Math.ceil((trainer_level + 1) / labeledAngles) *2;
+
+            var labels = [];
+            ctx.beginPath();
+            for (var i = 0; i < arcLevels ; i++) {
+                var startRadius = arcRadius;
+                var endRadius;
+                var labelRadius = 0;
+
+                if (i % labelEveryN == 0) { 
+                    endRadius = arcRadius + maxArcTick;
+                    labelRadius = endRadius + 5;
+                } else if (i % 2 == 0) { 
+                    endRadius = arcRadius + maxArcTick*.66;
+                } else { 
+                    endRadius = arcRadius + maxArcTick*.25;
+                }
+                var segmentAngle = 90 + ((CpM[i] - 0.094) * 202.037116 / CpM[trainer_level * 2 - 2]);
+                var start = polarToCartesian(centerX, centerY, startRadius, segmentAngle);
+                var end = polarToCartesian(centerX, centerY, endRadius, segmentAngle);
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(end.x, end.y);
+                if (labelRadius) {
+                    var lbl = polarToCartesian(centerX, centerY, labelRadius, segmentAngle);
+                    lbl.text =(( i / 2)+1).toString();
+                    labels[labels.length] = lbl;
+                }
+
+            }
+            ctx.stroke();
+            
+            for (var i = 0; i < labels.length; i++) { 
+                ctx.font = "24px Arial";
+                ctx.fillText(labels[i].text, labels[i].x, labels[i].y);
+            }
+
+        }
+
+        function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+            var angleInRadians = (angleInDegrees + 90) * Math.PI / 180.0;
+
+            return {
+                x: centerX + (radius * Math.cos(angleInRadians)),
+                y: centerY + (radius * Math.sin(angleInRadians))
+            };
+        }
+
+
+
+
+        function drawTickedLine(ctx, x1, y1, x2, y2) {
+            
+            var xDistance = Math.abs(x2 - x1);
+            var yDistance = Math.abs(y2 - y1);
+            
+            x10 = xDistance / 10;
+            y10 = yDistance / 10;
+
+            xMarks = x10 > y10;
+            var pixelsPer10 = xMarks ? x10 : y10;
+
+            var x = x1;
+            var y = y1;
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            while (x < x2 || y < y2) {
+                var segmentTotal = 10;
+                var segmentXDistance = x10 / segmentTotal;
+                var segmentYDistance = y10 / segmentTotal;
+                for (n = 1; n <= segmentTotal; n++) {
+                    x+=segmentXDistance;
+                    y+=segmentYDistance;
+                    ctx.lineTo(x, y);
+                    
+                    var segmentFactor;
+                    switch (n) {
+                        case 10:
+                            segmentFactor = 1;
+                            break;
+                        case 5:
+                            segmentFactor = 2 / 3;
+                            break;
+                        default:
+                            segmentFactor = 1 / 3;
+                            break;
+                    }
+
+
+                    var tickLength = maxGridTick * segmentFactor;                    
+                    ctx.lineTo(xMarks ? x : x + tickLength, xMarks ? y + tickLength : y);
+                    ctx.moveTo(x, y);
+                }
+            }
+            ctx.stroke();
+
+        }
+        document.getElementById("inScreenAR1").onchange = drawAll;
+        document.getElementById("inScreenAR2").onchange = drawAll;
+        document.getElementById("inScreenDiagonal").onchange = drawAll;
+
+        document.getElementById("inPrinterDPI").onchange = drawAll;
+        document.getElementById("inPlayerLevel").onchange = drawAll;
+        window.onload = function () {
+            drawAll();
+        }
+
+    </script>
+
+</body>
+</html>
